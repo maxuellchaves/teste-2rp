@@ -1,0 +1,32 @@
+#criação de secret para utlização no pod com variavel de ambiente
+kubectl create secret generic secret2rp --from-literal=TWORPTEST='true100%'
+
+#criação arquivo de manifesto para o pod
+cat <<EOT>> teste2rp.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx
+    env:
+    - name: TWORPTEST
+      valueFrom:
+        secretKeyRef:
+          name: secret2rp
+          key: TWORPTEST
+    command: ["/bin/sh"]
+    args: ["-c","while true; do echo $(TWORPTEST); sleep 20;done"]
+EOT
+
+#executando arquivo manifesto
+
+kubectl create -f nginx-pod
+
+#depois é só ver o log em tempo real que vai ser executado de 20 em 20 segundos
+
+kubectl logs -f nginx-pod
+
+

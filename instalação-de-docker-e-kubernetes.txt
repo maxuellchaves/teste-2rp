@@ -1,0 +1,96 @@
+#Instalar Docker em todos os Nodes
+#versão do linux ubuntu-focal-20.04
+
+# Adicionar chave GPG
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+# Adicionar repositório do Docker
+
+sudo add-apt-repository \
+         "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+# Atualizar lista de pacotes
+sudo apt-get update
+
+# Listar as versões do Docker que estão disponíveis no repositório 
+sudo apt list docker-ce -a
+
+# Instalar versão específica do Docker
+sudo apt-get install -y docker-ce
+
+
+# Impedir que o Docker atualize para a versão mais recente
+sudo apt-mark hold docker-ce
+
+
+# Configurar o daemon
+#caso tenha problema executar o sudo na frente do cat ou criar manual com vim /etc/docker/damemon.json
+cat > /etc/docker/daemon.json <<EOF
+{ "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"},
+  "storage-driver": "overlay2"}
+EOF
+
+
+# Configurar o daemon
+sudo mkdir -p /etc/systemd/system/docker.service.d
+# Reiniciar o docker.
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+
+
+# Verificar a versão instalada
+sudo docker version
+
+
+# Adicionar chave GPG
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+
+# Adicionar repositório do Kubernetes
+cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
+deb https://apt.kubernetes.io/ kubernetes-xenial main
+EOF     
+
+# Atualizar lista de pacotes
+sudo apt-get update
+
+# Listar as versões do K8s que estão disponíveis no repositório 
+sudo apt list kubelet -a
+
+# Instalar versões específicas das ferramentas
+sudo apt-get install -y kubelet kubeadm kubectl
+
+# Impedir que atualizações das ferramentas sejam instaladas
+sudo apt-mark hold kubelet kubeadm kubectl
+
+# Verificar a versão instalada
+sudo kubeadm version
+
+#Desabilitar swap imediatamente
+sudo swapoff -a
+
+sudo reboot
+
+#Atualizar fstab para que o swap permaneça desabilitado após o reboot
+sudo sed -i '/ swap / s/^(.*)$/#\1/g' /etc/fstab
+
+#instalando o minikube
+
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+#para o funcionamento do miniuke sem erro precisamos de no minimo 20bg de volume e 2cpu
+#e no minimo 2gb de ram
+
+# para funcionar o minikube precisamos desse seguinte comando senão dá erro 
+#na parte do ubuntu é o usuario linux utilizado
+sudo usermod -aG docker ubuntu && newgrp docker
+
+#depois veja a versão
+minikube version
+
+minikube start --wait=false
+
